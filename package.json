@@ -1,0 +1,34 @@
+{
+  "name": "resource_service",
+  "version": "0.1.0",
+  "description": "exrepss resource service",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ZHoiton/ResourceService.git"
+  },
+  "keywords": [
+    "express",
+    "node",
+    "mongodb",
+    "service"
+  ],
+  "author": "KV Ivanov",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ZHoiton/ResourceService/issues"
+  },
+  "homepage": "https://github.com/ZHoiton/ResourceService#readme",
+  "dependencies": {
+    "body-parser": "^1.18.3",
+    "express": "^4.16.4",
+    "joi": "^14.3.1",
+    "mongodb": "^3.1.10",
+    "nodemon": "^1.18.9",
+    "socket.io": "^2.2.0",
+    "uuid": "^3.3.2"
+  }
+}
