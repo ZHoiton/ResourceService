@@ -18,6 +18,7 @@ app.use(body_parser.json());
 
 app.get("/", (req, res) => res.sendStatus(200));
 
+
 app.post("/user", UserMiddleware.addUser, UserController.addUser);
 
 app.get("/user", UserMiddleware.getUser, UserController.getUser);
@@ -27,6 +28,7 @@ app.delete("/user", UserMiddleware.removeUser, UserController.removeUser);
 app.patch("/user/image", UserMiddleware.updateUserImage, UserController.updateUserImage);
 
 app.patch("/user/position", UserMiddleware.updateUserPosition, UserController.updateUserPosition);
+
 
 app.post("/company", CompanyMiddleware.addCompany, CompanyController.addCompany);
 

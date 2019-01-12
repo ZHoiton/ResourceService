@@ -1,59 +1,11 @@
 const { Connection } = require("../../db/connection");
+const { commitWithRetry, runTransactionWithRetry } = require("../../db/transaction");
 const uuidv1 = require("uuid/v1");
 
 const name = "CompanyController";
 
 const addCompany = (request, response) => {
-    const database = Connection.client.db("resources");
-
-    const company_id = uuidv1();
-
-    const rights = {
-        company: "ALL",
-        tasks: "ALL",
-        events: "ALL",
-        projects: "ALL"
-    };
-
-    const position = database.collection("positions").insertOne({
-        _id: uuidv1(),
-        name: "CEO",
-        company_id: company_id,
-        rights: rights
-    });
-
-    const company = database.collection("companies").insertOne({
-        _id: company_id,
-        name: request.body.name,
-        description: request.body.description,
-        image: undefined,
-        owner_id: request.body.auth_id,
-        created_at: new Date(),
-        updated_at: new Date()
-    });
-
-    const user = database.collection("users").updateOne(
-        { auth_id: request.body.auth_id },
-        {
-            $set: {
-                company_id: company_id,
-                position: { name: "CEO", rights: rights }
-            }
-        }
-    );
-
-    Promise.all([position, company, user])
-        .then(results => {
-            delete results[0].ops[0].owner_id;
-            return response.status(200).send({
-                data: {
-                    company: results[0].ops[0]
-                }
-            });
-        })
-        .catch(error => {
-            return response.sendStatus(500);
-        });
+    client.withSession(session => runTransactionWithRetry(transaction, Connection.client, session));
 };
 
 const removeCompany = async (request, response) => {
@@ -83,6 +35,7 @@ const removeCompany = async (request, response) => {
             );
     }
 };
+
 const updateCompany = (request, response) => {
     const database = Connection.client.db("resources");
 
@@ -104,6 +57,67 @@ const updateCompany = (request, response) => {
             }
         }
     );
+};
+
+const transaction = async (client, session) => {
+    const database = client.db("resources");
+
+    session.startTransaction({
+        readConcern: { level: "snapshot" },
+        writeConcern: { w: "majority" }
+    });
+
+    const company_id = uuidv1();
+
+    const rights = {
+        company: "ALL",
+        tasks: "ALL",
+        events: "ALL",
+        projects: "ALL"
+    };
+
+    const position = database.collection("positions").insertOne(
+        {
+            _id: uuidv1(),
+            name: "CEO",
+            company_id: company_id,
+            rights: rights
+        },
+        { session }
+    );
+
+    const company = database.collection("companies").insertOne(
+        {
+            _id: company_id,
+            name: request.body.name,
+            description: request.body.description,
+            image: undefined,
+            owner_id: request.body.auth_id,
+            created_at: new Date(),
+            updated_at: new Date()
+        },
+        { session }
+    );
+
+    const user = database.collection("users").updateOne(
+        { auth_id: request.body.auth_id },
+        {
+            $set: {
+                company_id: company_id,
+                position: { name: "CEO", rights: rights }
+            }
+        },
+        { session }
+    );
+
+    Promise.all([position, company, user]);
+
+    try {
+        await commitWithRetry(session);
+    } catch (error) {
+        await session.abortTransaction();
+        throw error;
+    }
 };
 
 module.exports = {
