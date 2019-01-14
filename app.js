@@ -25,9 +25,13 @@ app.get("/user", UserMiddleware.getUser, UserController.getUser);
 
 app.delete("/user", UserMiddleware.removeUser, UserController.removeUser);
 
+app.patch('/user/details', UserMiddleware.updateUserDetails, UserController.updateUserDetails);
+
 app.patch("/user/image", UserMiddleware.updateUserImage, UserController.updateUserImage);
 
 app.patch("/user/position", UserMiddleware.updateUserPosition, UserController.updateUserPosition);
+
+app.delete("/user/clear",  UserController.cleanUsers);
 
 
 app.post("/company", CompanyMiddleware.addCompany, CompanyController.addCompany);
@@ -35,5 +39,10 @@ app.post("/company", CompanyMiddleware.addCompany, CompanyController.addCompany)
 app.delete("/company", CompanyMiddleware.removeCompany, CompanyController.removeCompany);
 
 app.patch("/company", CompanyMiddleware.updateCompany, CompanyController.updateCompany);
+
+
+app.delete("/company/clear",  CompanyController.cleanCompanies);
+
+app.get("/company/all",  CompanyController.getAllCompanies);
 
 app.listen(port, () => console.log(`app started on port ${port}!`));
