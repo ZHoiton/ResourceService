@@ -47,18 +47,13 @@ const addCompany = (request, response) => {
 						{ upsert: true }
 					)
 					.then(company_result => {
-						if (
-							company_result.message.documents[0].upserted !==
-							undefined
-						) {
-							//if company added, find if and return it to the user, 
+						if (company_result.message.documents[0].upserted !== undefined) {
+							//if company added, find if and return it to the user,
 							//for some reason the update does not return the updated row, only the id
 							database
 								.collection("companies")
 								.findOne({
-									company_id:
-										company_result.message.documents[0]
-											.upserted._id
+									company_id: company_result.message.documents[0].upserted._id
 								})
 								.then(result => {
 									return response.status(200).send({
@@ -98,10 +93,7 @@ const removeCompany = async (request, response) => {
 	});
 
 	if ((await user) !== null) {
-		if (
-			user.permitions.rights.company === "ALL" ||
-			user.permitions.rights.company === "DELETE"
-		)
+		if (user.permitions.rights.company === "ALL" || user.permitions.rights.company === "DELETE")
 			database.collection("companies").deleteOne(
 				{
 					owner_id: request.body.auth_id,
