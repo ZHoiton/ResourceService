@@ -7,7 +7,7 @@ const getProject = (request, response) => {
 	const database = Connection.client.db("resources");
 
 	database
-		.collection("project")
+		.collection("projects")
 		.findOne({
 			project_id: request.body.project_id
 		})
@@ -26,6 +26,8 @@ const createProject = (request, response) => {
 
 	const created_at = new Date().getTime();
 
+	const participants = JSON.parse(request.body.participants);
+
 	database
 		.collection("projects")
 		.insertOne({
@@ -33,7 +35,7 @@ const createProject = (request, response) => {
 			company_id: request.body.company_id,
 			name: request.body.name,
 			description: request.body.description,
-			participants: request.body.participants,
+			participants: participants,
 			updated_at: created_at,
 			created_at: created_at
 		})
@@ -71,6 +73,8 @@ const deleteProject = (request, response) => {
 const updateParticipants = (request, response) => {
 	const database = Connection.client.db("resources");
 
+	const participants = JSON.parse(request.body.participants);
+
 	database
 		.collection("projects")
 		.findOneAndUpdate(
@@ -79,9 +83,69 @@ const updateParticipants = (request, response) => {
 			},
 			{
 				$set: {
-					participants: request.body.participants,
+					participants: participants,
 					updated_at: new Date().getTime()
 				}
+			},
+			{ returnOriginal: false }
+		)
+		.then(result => {
+			return response.status(200).send({
+				data: result.value
+			});
+		})
+		.catch(error => {
+			return response.status(404).send({
+				error: "resource not found"
+			});
+		});
+};
+
+const addParticipants = (request, response) => {
+	const database = Connection.client.db("resources");
+
+	const participants = JSON.parse(request.body.participants);
+
+	database
+		.collection("projects")
+		.findOneAndUpdate(
+			{
+				_id: request.body.project_id
+			},
+			{
+				$set: {
+					updated_at: new Date().getTime()
+				},
+				$push: { participants: { $each: participants } }
+			},
+			{ returnOriginal: false }
+		)
+		.then(result => {
+			return response.status(200).send({
+				data: result.value
+			});
+		})
+		.catch(error => {
+			return response.status(404).send({
+				error: "resource not found"
+			});
+		});
+};
+
+const removeParticipants = (request, response) => {
+	const database = Connection.client.db("resources");
+
+	//participants should be an array of id
+	const participant_id = JSON.parse(request.body.participants);
+
+	database
+		.collection("projects")
+		.findOneAndUpdate(
+			{
+				_id: request.body.project_id
+			},
+			{
+				$pull: { participants: { _id: { $in: participant_id } } }
 			},
 			{ returnOriginal: false }
 		)
@@ -130,9 +194,16 @@ const getTasks = (request, response) => {
 	const database = Connection.client.db("resources");
 
 	database
-		.collection("project_tasks")
+		.collection("tasks")
 		.find({
 			project_id: request.body.project_id
+		})
+		.project({
+			description: 0,
+			checklist: 0,
+			author: 0,
+			project_id: 0,
+			created_at: 0
 		})
 		.toArray(function(error, result) {
 			if (error) {
@@ -152,5 +223,7 @@ module.exports = {
 	updateParticipants,
 	updateDescription,
 	getTasks,
-	getProject
+	getProject,
+	addParticipants,
+	removeParticipants
 };

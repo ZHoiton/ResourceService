@@ -6,52 +6,40 @@ const name = "TaskController";
 const createTask = (request, response) => {
 	const database = Connection.client.db("resources");
 
-	const task_id = uuidv1();
 	const created_at = new Date().getTime();
 
+	const user = request.body.user !== undefined ? JSON.parse(request.body.user) : undefined;
+
+	const checklist = request.body.checklist !== undefined ? JSON.parse(request.body.checklist) : undefined;
+
+	const assignees = request.body.assignees !== undefined ? JSON.parse(request.body.assignees) : undefined;
+
+	const labels = request.body.labels !== undefined ? JSON.parse(request.body.labels) : undefined;
+
 	database
-		.collection("project_tasks")
+		.collection("tasks")
 		.insertOne({
+			_id: uuidv1(),
+			name: request.body.name,
+			description: request.body.description,
+			deadline: request.body.deadline,
+			checklist: checklist,
+			assignees: assignees,
+			labels: labels,
+			state: "open",
+			author: user,
 			project_id: request.body.project_id,
-			task_id: task_id,
-			task_name: request.body.name,
-			task_deadline: request.body.deadline,
-			task_labels: request.body.labels,
-			task_state: request.body.state,
 			updated_at: created_at,
 			created_at: created_at
 		})
 		.then(result => {
-			database
-				.collection("tasks")
-				.insertOne({
-					_id: task_id,
-					name: request.body.name,
-					description: request.body.description,
-					deadline: request.body.deadline,
-					checklist: request.body.checklist,
-					assignees: request.body.assignees,
-					labels: request.body.labels,
-					state: "open",
-					author: request.body.user,
-					project_id: request.body.project_id,
-					updated_at: created_at,
-					created_at: created_at
-				})
-				.then(result => {
-					return response.status(200).send({
-						data: result.ops[0]
-					});
-				})
-				.catch(error => {
-					return response.status(500).send({
-						error: "when inserting in tasks"
-					});
-				});
+			return response.status(200).send({
+				data: result.ops[0]
+			});
 		})
 		.catch(error => {
 			return response.status(500).send({
-				error: "when inserting in project_tasks"
+				error: "when inserting in tasks"
 			});
 		});
 };
@@ -80,41 +68,23 @@ const updateState = (request, response) => {
 	const database = Connection.client.db("resources");
 
 	database
-		.collection("project_tasks")
-		.updateOne(
-			{ task_id: request.body.task_id },
+		.collection("tasks")
+		.findOneAndUpdate(
+			{
+				_id: request.body.task_id
+			},
 			{
 				$set: {
-					task_state: request.body.state,
+					state: request.body.state,
 					updated_at: new Date().getTime()
 				}
-			}
+			},
+			{ returnOriginal: false }
 		)
-		.then(() => {
-			database
-				.collection("tasks")
-				.findOneAndUpdate(
-					{
-						_id: request.body.task_id
-					},
-					{
-						$set: {
-							state: request.body.state,
-							updated_at: new Date().getTime()
-						}
-					},
-					{ returnOriginal: false }
-				)
-				.then(result => {
-					return response.status(200).send({
-						data: result.value
-					});
-				})
-				.catch(error => {
-					return response.status(404).send({
-						error: "resource not found"
-					});
-				});
+		.then(result => {
+			return response.status(200).send({
+				data: result.value
+			});
 		})
 		.catch(error => {
 			return response.status(404).send({
@@ -127,41 +97,23 @@ const updateDeadline = (request, response) => {
 	const database = Connection.client.db("resources");
 
 	database
-		.collection("project_tasks")
-		.updateOne(
-			{ task_id: request.body.task_id },
+		.collection("tasks")
+		.findOneAndUpdate(
+			{
+				_id: request.body.task_id
+			},
 			{
 				$set: {
-					task_deadline: request.body.deadline,
+					deadline: request.body.deadline,
 					updated_at: new Date().getTime()
 				}
-			}
+			},
+			{ returnOriginal: false }
 		)
-		.then(() => {
-			database
-				.collection("tasks")
-				.findOneAndUpdate(
-					{
-						_id: request.body.task_id
-					},
-					{
-						$set: {
-							deadline: request.body.deadline,
-							updated_at: new Date().getTime()
-						}
-					},
-					{ returnOriginal: false }
-				)
-				.then(result => {
-					return response.status(200).send({
-						data: result.value
-					});
-				})
-				.catch(error => {
-					return response.status(404).send({
-						error: "resource not found"
-					});
-				});
+		.then(result => {
+			return response.status(200).send({
+				data: result.value
+			});
 		})
 		.catch(error => {
 			return response.status(404).send({
@@ -173,6 +125,8 @@ const updateDeadline = (request, response) => {
 const updateAssignees = (request, response) => {
 	const database = Connection.client.db("resources");
 
+	const assignees = JSON.parse(request.body.assignees);
+
 	database
 		.collection("tasks")
 		.findOneAndUpdate(
@@ -181,9 +135,69 @@ const updateAssignees = (request, response) => {
 			},
 			{
 				$set: {
-					assignees: request.body.assignees,
+					assignees: assignees,
 					updated_at: new Date().getTime()
 				}
+			},
+			{ returnOriginal: false }
+		)
+		.then(result => {
+			return response.status(200).send({
+				data: result.value
+			});
+		})
+		.catch(error => {
+			return response.status(404).send({
+				error: "resource not found"
+			});
+		});
+};
+
+const addAssignees = (request, response) => {
+	const database = Connection.client.db("resources");
+
+	const assignees = JSON.parse(request.body.assignees);
+
+	database
+		.collection("projects")
+		.findOneAndUpdate(
+			{
+				_id: request.body.project_id
+			},
+			{
+				$set: {
+					updated_at: new Date().getTime()
+				},
+				$push: { assignees: { $each: assignees } }
+			},
+			{ returnOriginal: false }
+		)
+		.then(result => {
+			return response.status(200).send({
+				data: result.value
+			});
+		})
+		.catch(error => {
+			return response.status(404).send({
+				error: "resource not found"
+			});
+		});
+};
+
+const removeAssignees = (request, response) => {
+	const database = Connection.client.db("resources");
+
+	//assignees should be an array of id
+	const assignees_id = JSON.parse(request.body.assignees);
+
+	database
+		.collection("projects")
+		.findOneAndUpdate(
+			{
+				_id: request.body.project_id
+			},
+			{
+				$pull: { assignees: { _id: { $in: assignees_id } } }
 			},
 			{ returnOriginal: false }
 		)
@@ -202,42 +216,26 @@ const updateAssignees = (request, response) => {
 const updateLabels = (request, response) => {
 	const database = Connection.client.db("resources");
 
+	const labels = JSON.parse(request.body.labels);
+
 	database
-		.collection("project_tasks")
-		.updateOne(
-			{ task_id: request.body.task_id },
+		.collection("tasks")
+		.findOneAndUpdate(
+			{
+				_id: request.body.task_id
+			},
 			{
 				$set: {
-					task_labels: request.body.labels,
+					labels: labels,
 					updated_at: new Date().getTime()
 				}
-			}
+			},
+			{ returnOriginal: false }
 		)
-		.then(() => {
-			database
-				.collection("tasks")
-				.findOneAndUpdate(
-					{
-						_id: request.body.task_id
-					},
-					{
-						$set: {
-							labels: request.body.labels,
-							updated_at: new Date().getTime()
-						}
-					},
-					{ returnOriginal: false }
-				)
-				.then(result => {
-					return response.status(200).send({
-						data: result.value
-					});
-				})
-				.catch(error => {
-					return response.status(404).send({
-						error: "resource not found"
-					});
-				});
+		.then(result => {
+			return response.status(200).send({
+				data: result.value
+			});
 		})
 		.catch(error => {
 			return response.status(404).send({
@@ -329,9 +327,11 @@ const getComments = (request, response) => {
 
 const createComment = (request, response) => {
 	const database = Connection.client.db("resources");
+
 	const comment_id = uuidv1();
 
 	const created_at = new Date().getTime();
+
 	const user = JSON.parse(request.body.user);
 
 	database
@@ -349,7 +349,7 @@ const createComment = (request, response) => {
 			if (request.body.reply_to !== undefined) {
 				database
 					.collection("comments")
-					.updateOne({ _id: request.body.reply_to }, { $addToSet: { children: comment_id } })
+					.updateOne({ _id: request.body.reply_to }, { $: { children: comment_id } })
 					.then(() => {
 						result.ops[0]["parent"] = request.body.reply_to;
 						return response.status(200).send({
@@ -455,6 +455,18 @@ const deleteComment = (request, response) => {
 		});
 };
 
+//sockets
+//comments
+// - user currently writing
+// - update comments to everyone else when user adds a comment
+//task
+// - when task is updated/added
+// -
+//project
+// - when task is updated/added
+//company
+// - user status
+
 module.exports = {
 	name,
 	createTask,
@@ -462,6 +474,8 @@ module.exports = {
 	updateState,
 	updateDeadline,
 	updateAssignees,
+	addAssignees,
+	removeAssignees,
 	updateLabels,
 	updateDescription,
 	updateTaskAuthor,

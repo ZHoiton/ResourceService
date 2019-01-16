@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const body_parser = require("body-parser");
+
 const { Connection } = require("./db/connection");
 Connection.connect();
 
@@ -9,6 +10,10 @@ const { UserController, CompanyController, TaskController, ProjectController } =
 
 const app = express();
 
+const user_activity_server = require("http").Server(app);
+UserController._init(user_activity_server);
+
+const user_socket_port = 9010;
 const port = 9000;
 
 // parse application/x-www-form-urlencoded
@@ -24,25 +29,24 @@ router.get("/", (req, res) => res.sendStatus(200));
 | User routes
 |================================================================
 */
-router.post("/user", UserMiddleware.addUser, UserController.addUser);
+router.post("/user", UserController.addUser);
 
-router.get("/user", UserMiddleware.getUser, UserController.getUser);
+router.get("/user", UserController.getUser);
 
-router.delete("/user", UserMiddleware.removeUser, UserController.removeUser);
+router.delete("/user", UserController.removeUser);
 
-router.patch("/user/details", UserMiddleware.updateUserDetails, UserController.updateUserDetails);
+router.put("/user", UserController.updateUserDetails);
 
-router.patch("/user/image", UserMiddleware.updateUserImage, UserController.updateUserImage);
+router.patch("/user/image", UserController.updateUserImage);
 
-router.patch("/user/position", UserMiddleware.updateUserPosition, UserController.updateUserPosition);
-
-router.delete("/user/clear", UserController.cleanUsers);
+router.patch("/user/position", UserController.updateUserPosition);
 
 /*
 |================================================================
 | Company routes
 |================================================================
 */
+
 router.post("/company", CompanyMiddleware.addCompany, CompanyController.addCompany);
 
 router.delete("/company", CompanyMiddleware.removeCompany, CompanyController.removeCompany);
@@ -67,7 +71,11 @@ router.post("/project", ProjectController.createProject);
 
 router.delete("/project", ProjectController.deleteProject);
 
-router.patch("/project/participants", ProjectController.updateParticipants);
+router.put("/project/participants", ProjectController.updateParticipants);
+
+router.patch("/project/participants", ProjectController.addParticipants);
+
+router.delete("/project/participants", ProjectController.removeParticipants);
 
 router.patch("/project/description", ProjectController.updateDescription);
 
@@ -84,7 +92,11 @@ router.patch("/task/state", TaskController.updateState);
 
 router.patch("/task/deadline", TaskController.updateDeadline);
 
-router.patch("/task/assignees", TaskController.updateAssignees);
+router.put("/task/assignees", TaskController.updateAssignees);
+
+router.patch("/task/assignees", TaskController.addAssignees);
+
+router.delete("/task/assignees", TaskController.removeAssignees);
 
 router.patch("/task/labels", TaskController.updateLabels);
 
@@ -104,3 +116,4 @@ router.delete("/task/comment", TaskController.deleteComment);
 app.use("/api/v1", router);
 
 app.listen(port, () => console.log(`app started on port ${port}!`));
+user_activity_server.listen(user_socket_port);
