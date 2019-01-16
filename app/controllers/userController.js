@@ -1,90 +1,7 @@
 const { Connection } = require("../../db/connection");
 const uuidv1 = require("uuid/v1");
-const { user_server_port } = require("../../config/app-ports");
 
 const name = "UserController";
-
-/**
- * starts a server and attaches all the event listeners to the socket
- * @param {HTTP Server} server
- */
-const _init = server => {
-	const user_io = require("socket.io")(server);
-
-	userActivityListener(user_io);
-
-	server.listen(user_server_port);
-};
-
-/**
- * implements all the logic for when a user comes online or offline
- * @param {WebSocket} io
- */
-const userActivityListener = io => {
-	io.of("/socket/user", socket => {
-		const company_id = socket.handshake.query.company_id;
-
-		const user_id = socket.handshake.query.user_id;
-
-		//on connection to the socket, add the user to his company namespace/room
-		socket.join(`company-${company_id}`, () => {
-			updateUserStatus(socket, user_id, company_id, "online");
-		});
-
-		//the same as on connect but inverse
-		socket.on("disconnect", () => {
-			updateUserStatus(socket, user_id, company_id, "offline");
-		});
-	});
-};
-
-const getUserStatusSocket = (request, response) => {
-	const company_id = request.body.company_id;
-
-	const user_id = request.body.user_id;
-
-	response.status(200).send({
-		data: {
-			socket: `http://127.0.0.1:${user_server_port}/socket/user?user_id=${user_id}&company_id=${company_id}`,
-			onConnection: ["status-event"],
-			onDisconnect: ["status-event"],
-			events: {
-				"status-event": {
-					type: "emit",
-					description: "emitted to everyone in the same company namespace that a given user status has changed",
-					data: { user: { _id: "<uuid>", status: "<string>" } }
-				}
-			}
-		}
-	});
-};
-
-const updateUserStatus = (socket, user_id, company_id, status) => {
-	const database = Connection.client.db("resources");
-
-	database
-		.collection("users")
-		.findOneAndUpdate(
-			{
-				_id: user_id
-			},
-			{
-				$set: {
-					status: status,
-					updated_at: new Date().getTime()
-				}
-			},
-			{ returnOriginal: false, projection: { _id: 1, status: 1 } }
-		)
-		.then(result => {
-			socket.to(`company-${company_id}`).emit("status-event", {
-				data: { user: result.value }
-			});
-		})
-		.catch(error => {
-			console.log(error);
-		});
-};
 
 const addUser = (request, response) => {
 	// Get the documents collection
@@ -265,12 +182,10 @@ const updateUserPosition = async (request, response) => {
 
 module.exports = {
 	name,
-	_init,
 	addUser,
 	getUser,
 	removeUser,
 	updateUserImage,
 	updateUserDetails,
 	updateUserPosition,
-	getUserStatusSocket
 };

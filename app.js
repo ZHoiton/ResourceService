@@ -1,27 +1,19 @@
-const express = require("express");
-const router = express.Router();
+const { app, router } = require("./app/app");
+const { app_server_port } = require("./config/ports");
 const body_parser = require("body-parser");
 
 const { Connection } = require("./db/connection");
 Connection.connect();
+const { UserSocket, ProjectSocket } = require("./app/sockets/sockets");
 
 const { UserMiddleware, CompanyMiddleware } = require("./app/middleware/middleware");
 const { UserController, CompanyController, TaskController, ProjectController } = require("./app/controllers/controllers");
-const { app_server_port } = require("./config/app-ports");
-
-const app = express();
-
-const user_activity_server = require("http").Server(app);
-
-UserController._init(user_activity_server);
 
 // parse application/x-www-form-urlencoded
 app.use(body_parser.urlencoded({ extended: false }));
 
 // parse application/json
 app.use(body_parser.json());
-
-router.get("/", (req, res) => res.sendStatus(200));
 
 /*
 |================================================================
@@ -116,17 +108,15 @@ router.delete("/task/comment", TaskController.deleteComment);
 | Web Sockets
 |================================================================
 */
-router.get("/socket/user/status", UserController.getUserStatusSocket);
+router.get("/socket/user", UserSocket.getUserSocket);
 
+router.get("/socket/project", ProjectSocket.getProjectSocket);
 
 //sockets
 //comments
 // - user currently writing
 // - update comments to everyone else when user adds a comment
 //task
-// - when task is updated/added
-// -
-//project
 // - when task is updated/added
 
 //setting a prefix for v1

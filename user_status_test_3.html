@@ -11,11 +11,18 @@
 	<script>
 		var user = {
 			id: "115db780-19aa-11e9-8f09-25e2eb8a1ddf",
-			company_id: 2
+			company_id: 2,
+			project_id: 2
 		};
 		var socket = io.connect(`http://127.0.0.1:9010/socket/user?user_id=${user.id}&company_id=${user.company_id}`);
 
 		socket.on("status-event", response => {
+			console.log(response);
+		});
+
+		var proj_socket = io.connect(`http://127.0.0.1:9020/socket/project?project_id=${user.project_id}`);
+
+		proj_socket.on("task-event", response => {
 			console.log(response);
 		});
 	</script>

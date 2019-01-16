@@ -1,5 +1,7 @@
 const { Connection } = require("../../db/connection");
+const { taskEvent } = require("../sockets/projectSocket");
 const uuidv1 = require("uuid/v1");
+const io = require("socket.io");
 
 const name = "TaskController";
 
@@ -33,6 +35,7 @@ const createTask = (request, response) => {
 			created_at: created_at
 		})
 		.then(result => {
+			taskEvent(result.ops[0].project_id, result.ops[0]);
 			return response.status(200).send({
 				data: result.ops[0]
 			});
@@ -82,6 +85,7 @@ const updateState = (request, response) => {
 			{ returnOriginal: false }
 		)
 		.then(result => {
+			taskEvent(result.value.project_id, result.value);
 			return response.status(200).send({
 				data: result.value
 			});
@@ -111,6 +115,7 @@ const updateDeadline = (request, response) => {
 			{ returnOriginal: false }
 		)
 		.then(result => {
+			taskEvent(result.value.project_id, result.value);
 			return response.status(200).send({
 				data: result.value
 			});
@@ -142,6 +147,7 @@ const updateAssignees = (request, response) => {
 			{ returnOriginal: false }
 		)
 		.then(result => {
+			taskEvent(result.value.project_id, result.value);
 			return response.status(200).send({
 				data: result.value
 			});
@@ -173,6 +179,7 @@ const addAssignees = (request, response) => {
 			{ returnOriginal: false }
 		)
 		.then(result => {
+			taskEvent(result.value.project_id, result.value);
 			return response.status(200).send({
 				data: result.value
 			});
@@ -202,6 +209,7 @@ const removeAssignees = (request, response) => {
 			{ returnOriginal: false }
 		)
 		.then(result => {
+			taskEvent(result.value.project_id, result.value);
 			return response.status(200).send({
 				data: result.value
 			});
@@ -233,6 +241,7 @@ const updateLabels = (request, response) => {
 			{ returnOriginal: false }
 		)
 		.then(result => {
+			taskEvent(result.value.project_id, result.value);
 			return response.status(200).send({
 				data: result.value
 			});
@@ -262,6 +271,7 @@ const updateDescription = (request, response) => {
 			{ returnOriginal: false }
 		)
 		.then(result => {
+			taskEvent(result.value.project_id, result.value);
 			return response.status(200).send({
 				data: result.value
 			});
