@@ -7,14 +7,13 @@ Connection.connect();
 
 const { UserMiddleware, CompanyMiddleware } = require("./app/middleware/middleware");
 const { UserController, CompanyController, TaskController, ProjectController } = require("./app/controllers/controllers");
+const { app_server_port } = require("./config/app-ports");
 
 const app = express();
 
 const user_activity_server = require("http").Server(app);
-UserController._init(user_activity_server);
 
-const user_socket_port = 9010;
-const port = 9000;
+UserController._init(user_activity_server);
 
 // parse application/x-www-form-urlencoded
 app.use(body_parser.urlencoded({ extended: false }));
@@ -112,8 +111,25 @@ router.patch("/task/comment/body", TaskController.updateCommentBody);
 
 router.delete("/task/comment", TaskController.deleteComment);
 
+/*
+|================================================================
+| Web Sockets
+|================================================================
+*/
+router.get("/socket/user/status", UserController.getUserStatusSocket);
+
+
+//sockets
+//comments
+// - user currently writing
+// - update comments to everyone else when user adds a comment
+//task
+// - when task is updated/added
+// -
+//project
+// - when task is updated/added
+
 //setting a prefix for v1
 app.use("/api/v1", router);
 
-app.listen(port, () => console.log(`app started on port ${port}!`));
-user_activity_server.listen(user_socket_port);
+app.listen(app_server_port, () => console.log(`app started on port ${app_server_port}!`));

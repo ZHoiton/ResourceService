@@ -455,18 +455,6 @@ const deleteComment = (request, response) => {
 		});
 };
 
-//sockets
-//comments
-// - user currently writing
-// - update comments to everyone else when user adds a comment
-//task
-// - when task is updated/added
-// -
-//project
-// - when task is updated/added
-//company
-// - user status
-
 module.exports = {
 	name,
 	createTask,
