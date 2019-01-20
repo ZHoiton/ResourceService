@@ -1,5 +1,5 @@
 const { app, router } = require("./app/app");
-const { app_server_port } = require("./config/ports");
+const { app_server_port } = require("./config/network");
 const body_parser = require("body-parser");
 
 const { Connection } = require("./db/connection");

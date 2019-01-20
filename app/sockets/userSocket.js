@@ -1,6 +1,6 @@
 const { app } = require("../app");
 const { Connection } = require("../../db/connection");
-const { user_server_port } = require("../../config/ports");
+const { app_server_ip, user_server_port } = require("../../config/network");
 
 const server = require("http").Server(app);
 const io = require("socket.io")(server);
@@ -14,16 +14,18 @@ const getUserSocket = (request, response) => {
 
 	response.status(200).send({
 		data: {
-			socket: `http://127.0.0.1:${user_server_port}/socket/user?user_id=${user_id}&company_id=${company_id}`,
+			socket: `http://${app_server_ip}:${user_server_port}/socket/user?user_id=${user_id}&company_id=${company_id}`,
 			onConnection: ["status-event"],
 			onDisconnect: ["status-event"],
-			events: {
-				"status-event": {
-					type: "emit",
-					description: "emitted to everyone in the same company namespace that a given user status has changed",
-					data: { user: { _id: "uuid", status: "string" } }
+			events: [
+				{
+					"status-event": {
+						type: "emit",
+						description: "emitted to everyone in the same company namespace that a given user status has changed",
+						data: { user: { _id: "uuid", status: "string" } }
+					}
 				}
-			}
+			]
 		}
 	});
 };

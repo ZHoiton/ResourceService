@@ -1,5 +1,5 @@
 const { app } = require("../app");
-const { project_server_port } = require("../../config/ports");
+const { app_server_ip, project_server_port } = require("../../config/network");
 
 const server = require("http").Server(app);
 const io = require("socket.io")(server);
@@ -33,26 +33,28 @@ const getProjectSocket = (request, response) => {
 
 	response.status(200).send({
 		data: {
-			socket: `http://127.0.0.1:${project_server_port}/socket/project?project_id=${project_id}`,
+			socket: `http://${app_server_ip}:${project_server_port}/socket/project?project_id=${project_id}`,
 			onConnection: [],
 			onDisconnect: [],
-			events: {
-				"task-event": {
-					type: "emit",
-					description: "emitted to everyone in the same project namespace when a task is updated or created",
-					data: {
-						user: {
-							_id: "uuid",
-							state: "string",
-							name: "string",
-							labels: "array",
-							deadline: "timestamp",
-							assignees: "array",
-							updated_at: "timestamp"
+			events: [
+				{
+					"task-event": {
+						type: "emit",
+						description: "emitted to everyone in the same project namespace when a task is updated or created",
+						data: {
+							user: {
+								_id: "uuid",
+								state: "string",
+								name: "string",
+								labels: "array",
+								deadline: "timestamp",
+								assignees: "array",
+								updated_at: "timestamp"
+							}
 						}
 					}
 				}
-			}
+			]
 		}
 	});
 };
